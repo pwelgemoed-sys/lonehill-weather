@@ -48,18 +48,9 @@ export async function onRequestGet({ env }) {
     return jsonResponse({ error: realtimeData.msg || 'Ecowitt API returned an error.' }, 502);
   }
 
-  // Capture history result — include error details in response for debugging
-  let historyData = null;
-  let historyError = null;
-  if (historyResult.status === 'fulfilled') {
-    if (historyResult.value?.code === 0) {
-      historyData = historyResult.value.data;
-    } else {
-      historyError = { code: historyResult.value?.code, msg: historyResult.value?.msg };
-    }
-  } else {
-    historyError = { msg: historyResult.reason?.message || 'fetch failed' };
-  }
+  const historyData = historyResult.status === 'fulfilled' && historyResult.value?.code === 0
+    ? historyResult.value.data
+    : null;
 
   // --- Update KV trend history ---
   let trendHistory = { pressure: [], temperature: [] };
@@ -70,7 +61,6 @@ export async function onRequestGet({ env }) {
   return jsonResponse({
     realtime: realtimeData.data,
     history: historyData,
-    history_error: historyError,  // null when successful — remove once confirmed working
     trends: trendHistory,
   });
 }
@@ -108,7 +98,11 @@ async function fetchEcowitt(url) {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
-  return response.json();
+  // Force UTF-8 decoding via ArrayBuffer — Ecowitt sometimes sends an incorrect
+  // Content-Type that causes the runtime to default to Latin-1, mangling ° and ²
+  const buffer = await response.arrayBuffer();
+  const text = new TextDecoder('utf-8').decode(buffer);
+  return JSON.parse(text);
 }
 
 /**
