@@ -987,7 +987,7 @@
         }
 
         // ---------------------------------------------------------------------------
-        // Safe Value extraction — returns null instead of 0 for missing data
+        // Safe value extraction — returns null instead of 0 for missing data
         // ---------------------------------------------------------------------------
         function getValue(obj) {
             if (obj == null || obj.value == null || obj.value === '') return null;
@@ -1220,8 +1220,11 @@
             let isSimulated = false;
 
             if (historyData?.outdoor?.temperature) {
-                const tempList = historyData.outdoor.temperature.list || [];
-                const humList  = historyData.outdoor.humidity?.list  || [];
+                // Ecowitt returns list as { "timestamp": "value", ... } not an array
+                const tempObj  = historyData.outdoor.temperature.list || {};
+                const humObj   = historyData.outdoor.humidity?.list   || {};
+                const tempList = Object.entries(tempObj).map(([time, value]) => ({ time: parseInt(time), value }));
+                const humList  = Object.entries(humObj).map(([time, value])  => ({ time: parseInt(time), value }));
                 labels   = tempList.map(d => new Date(d.time * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
                 temps    = tempList.map(d => convertTemp(fToC(parseFloat(d.value))));
                 humidity = humList.map(d => parseFloat(d.value));
@@ -1293,7 +1296,9 @@
             let isSimulated = false;
 
             if (historyData?.pressure?.relative) {
-                const list = historyData.pressure.relative.list || [];
+                // Ecowitt returns list as { "timestamp": "value", ... } not an array
+                const pressObj = historyData.pressure.relative.list || {};
+                const list = Object.entries(pressObj).map(([time, value]) => ({ time: parseInt(time), value }));
                 labels       = list.map(d => new Date(d.time * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
                 pressureData = list.map(d => inHgToHPa(parseFloat(d.value)));
             } else {
