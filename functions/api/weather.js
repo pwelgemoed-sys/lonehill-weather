@@ -48,9 +48,18 @@ export async function onRequestGet({ env }) {
     return jsonResponse({ error: realtimeData.msg || 'Ecowitt API returned an error.' }, 502);
   }
 
-  const historyData = historyResult.status === 'fulfilled' && historyResult.value?.code === 0
-    ? historyResult.value.data
-    : null;
+  // Capture history result — include error details in response for debugging
+  let historyData = null;
+  let historyError = null;
+  if (historyResult.status === 'fulfilled') {
+    if (historyResult.value?.code === 0) {
+      historyData = historyResult.value.data;
+    } else {
+      historyError = { code: historyResult.value?.code, msg: historyResult.value?.msg };
+    }
+  } else {
+    historyError = { msg: historyResult.reason?.message || 'fetch failed' };
+  }
 
   // --- Update KV trend history ---
   let trendHistory = { pressure: [], temperature: [] };
@@ -61,6 +70,7 @@ export async function onRequestGet({ env }) {
   return jsonResponse({
     realtime: realtimeData.data,
     history: historyData,
+    history_error: historyError,  // null when successful — remove once confirmed working
     trends: trendHistory,
   });
 }
@@ -74,10 +84,23 @@ export async function onRequestOptions() {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Ecowitt history API expects dates as "YYYY-MM-DD HH:MM:SS" in the
+ * station's local timezone. Lonehill is UTC+2 (Africa/Johannesburg).
+ */
 function buildHistoryUrl(appKey, apiKey, mac) {
-  const endTime = Math.floor(Date.now() / 1000);
-  const startTime = endTime - 24 * 3600;
-  return `${ECOWITT_BASE}/history?application_key=${appKey}&api_key=${apiKey}&mac=${mac}&start_date=${startTime}&end_date=${endTime}&cycle_type=30min&call_back=outdoor,pressure`;
+  const toEcowittDate = (date) => {
+    // Format in SAST (UTC+2) — Ecowitt interprets dates in local station time
+    return date.toLocaleString('sv-SE', { timeZone: 'Africa/Johannesburg' }).replace('T', ' ');
+  };
+
+  const now   = new Date();
+  const start = new Date(now.getTime() - 24 * 3600 * 1000);
+
+  const endDate   = toEcowittDate(now);
+  const startDate = toEcowittDate(start);
+
+  return `${ECOWITT_BASE}/history?application_key=${appKey}&api_key=${apiKey}&mac=${mac}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&cycle_type=30min&call_back=outdoor,pressure`;
 }
 
 async function fetchEcowitt(url) {
