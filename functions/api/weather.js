@@ -18,7 +18,7 @@ const ECOWITT_BASE = 'https://api.ecowitt.net/api/v3/device';
 const KV_HISTORY_KEY = 'trend_history';
 const MAX_HISTORY_HOURS = 48;
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://lonehill.pages.dev',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Content-Type': 'application/json',
 };
@@ -128,16 +128,17 @@ async function updateTrendHistory(kv, realtimeData) {
   const rawPressure = parseEcowittValue(realtimeData?.pressure?.relative);
   const rawTemp = parseEcowittValue(realtimeData?.outdoor?.temperature);
 
+  // Trim to rolling window FIRST, then append the new reading so we never
+  // temporarily hold more entries than the window allows
+  history.pressure    = history.pressure.filter(p => p.time > cutoff);
+  history.temperature = history.temperature.filter(t => t.time > cutoff);
+
   if (rawPressure !== null) {
     history.pressure.push({ time: now, value: inHgToHPa(rawPressure) });
   }
   if (rawTemp !== null) {
     history.temperature.push({ time: now, value: fToC(rawTemp) });
   }
-
-  // Trim to rolling window
-  history.pressure = history.pressure.filter(p => p.time > cutoff);
-  history.temperature = history.temperature.filter(t => t.time > cutoff);
 
   // Write back — use a 49-hour TTL so KV auto-cleans if the station goes offline
   try {
