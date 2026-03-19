@@ -702,8 +702,6 @@
             margin-bottom: 20px;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         .error-banner {
             background: rgba(255, 107, 74, 0.1);
             border: 1px solid var(--accent-warm);
@@ -1142,7 +1140,6 @@
                 windSpeed !== null ? `${fmt(windSpeed)} km/h` : '-- km/h';
 
             // UV bar
-            const uvNum = uv !== null ? uv : 0;
             document.getElementById('hero-uv').textContent = uv !== null ? fmt(uv, 0) : '-';
             const uvStyle = getUVClass(uv);
             const uvBarFill = document.getElementById('uv-bar-fill');
@@ -1522,12 +1519,13 @@
                 settingsPanel.classList.remove('active');
                 refreshData();
             });
-        });
 
-        // ---------------------------------------------------------------------------
-        // Boot
-        // ---------------------------------------------------------------------------
-        refreshData(true);
+            // ---------------------------------------------------------------------------
+            // Boot — inside DOMContentLoaded so all event listeners are bound before
+            // the first fetch resolves and tries to update the UI
+            // ---------------------------------------------------------------------------
+            refreshData(true);
+        });
     </script>
 </body>
 </html>
