@@ -382,10 +382,6 @@
             color: rgba(255,255,255,0.9);
             margin-bottom: 3px;
         }
-        .feels-like {
-            font-size: 13px;
-            color: rgba(255,255,255,0.45);
-        }
 
         /* Trend pill — inline with condition */
         .condition-row {
@@ -469,9 +465,11 @@
             margin-bottom: 14px;
         }
         .chart-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.85);
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.38);
         }
         .chart-period {
             font-size: 10px;
@@ -553,44 +551,78 @@
         }
 
         /* ── SVG Compass ── */
+        /* ── Compass rose (Option A) ── */
+        .rose-wrap {
+            position: relative;
+            width: 154px;
+            height: 154px;
+            margin: 0 auto 4px;
+        }
         .compass-svg {
             display: block;
-            width: 100%;
-            max-width: 140px;
-            margin: 0 auto 8px;
+            width: 154px;
+            height: 154px;
             overflow: visible;
         }
-        .compass-letter {
-            font-size: 8px;
-            fill: rgba(255,255,255,0.35);
-            font-family: -apple-system, system-ui, sans-serif;
-            font-weight: 500;
-        }
-        .compass-letter.north {
-            fill: rgba(255,255,255,0.75);
-            font-weight: 600;
-        }
+        /* Needle groups rotate around SVG origin (0,0 = viewBox centre) */
         #wind-needle, #wind-needle-avg {
-            transform-origin: 50% 50%;
+            transform-origin: 0px 0px;
             transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
         }
-
-        .wind-speed-readout {
+        /* Speed + direction overlaid in the rose centre */
+        .rose-centre {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            font-size: 22px;
+            pointer-events: none;
+        }
+        .rose-speed-num {
+            font-size: 24px;
             font-weight: 200;
             color: #fff;
+            line-height: 1;
+            display: block;
         }
-        .wind-speed-unit {
-            font-size: 11px;
+        .rose-speed-unit {
+            font-size: 10px;
             color: rgba(255,255,255,0.4);
-            margin-left: 3px;
+            display: block;
+            margin-top: 1px;
         }
-        .wind-dir-readout {
-            text-align: center;
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
+        .rose-dir-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.75);
+            letter-spacing: 1px;
+            display: block;
             margin-top: 3px;
+        }
+        /* Gust row below the rose */
+        .rose-gust-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin-top: 4px;
+        }
+        .rose-gust-label {
+            font-size: 9px;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.38);
+        }
+        .rose-gust-val {
+            font-size: 16px;
+            font-weight: 300;
+            color: rgba(255,255,255,0.85);
+        }
+        .rose-gust-unit {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
         }
 
         /* ── UV card ── */
@@ -726,7 +758,7 @@
             #current-temp { font-size: 96px; }
             .weather-icon { font-size: 60px; }
 
-            .data-row { grid-template-columns: repeat(3, 1fr); }
+            .data-row { grid-template-columns: repeat(2, 1fr); }
         }
 
         /* ════════════════════════════════════════
@@ -824,7 +856,6 @@
                 <div class="condition-name" id="condition-name">--</div>
                 <div class="trend-pill" id="trend-pill"></div>
             </div>
-            <div class="feels-like" id="feels-like">Feels like --</div>
         </div>
 
         <!-- STATS STRIP -->
@@ -882,44 +913,108 @@
 
             <div class="detail-card glass">
                 <div class="detail-label">Wind</div>
-                <!-- SVG compass rose -->
-                <svg class="compass-svg" viewBox="-50 -50 100 100" id="compass-svg">
-                    <!-- outer ring -->
-                    <circle r="46" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-                    <!-- dashed inner ring -->
-                    <circle r="36" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="3 5"/>
-                    <!-- cardinal labels -->
-                    <text x="0" y="-37" text-anchor="middle" dominant-baseline="middle" class="compass-letter north">N</text>
-                    <text x="0"  y="40"  text-anchor="middle" dominant-baseline="middle" class="compass-letter">S</text>
-                    <text x="40" y="0"   text-anchor="middle" dominant-baseline="middle" class="compass-letter">E</text>
-                    <text x="-40" y="0"  text-anchor="middle" dominant-baseline="middle" class="compass-letter">W</text>
-                    <!-- 10-min avg needle (lighter, dashed) -->
-                    <g id="wind-needle-avg" style="transform-origin:0px 0px">
-                        <line x1="0" y1="-26" x2="0" y2="20"
-                              stroke="rgba(255,255,255,0.25)" stroke-width="1.5"
-                              stroke-dasharray="4 3" stroke-linecap="round"/>
-                    </g>
-                    <!-- current wind needle -->
-                    <g id="wind-needle" style="transform-origin:0px 0px">
-                        <!-- red N tip -->
-                        <line x1="0" y1="-26" x2="0" y2="0"
-                              stroke="#FF5555" stroke-width="2.5" stroke-linecap="round"/>
-                        <!-- white S tip -->
-                        <line x1="0" y1="0"   x2="0" y2="20"
-                              stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round"/>
-                        <!-- centre dot -->
-                        <circle r="3.5" fill="#fff" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>
-                    </g>
-                    <!-- direction text in centre -->
-                    <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-size="0" fill="transparent">N</text>
-                </svg>
-                <div class="wind-speed-readout">
-                    <span id="hero-wind-speed" style="font-size:22px;font-weight:200;color:#fff">--</span><span class="wind-speed-unit">km/h</span>
+
+                <div class="rose-wrap">
+                    <svg class="compass-svg" viewBox="-74 -74 148 148">
+                        <defs>
+                            <linearGradient id="needle-grad" x1="0" y1="-62" x2="0" y2="18" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%"   stop-color="rgba(255,255,255,0.85)"/>
+                                <stop offset="100%" stop-color="rgba(255,255,255,0.18)"/>
+                            </linearGradient>
+                            <linearGradient id="needle-red" x1="0" y1="-62" x2="0" y2="-28" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%"   stop-color="#FF3333"/>
+                                <stop offset="100%" stop-color="#FF8888"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Outer tick ring -->
+                        <circle r="68" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+                        <!-- Cardinal axis ticks -->
+                        <g stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-linecap="round">
+                            <line x1="0"   y1="-68" x2="0"   y2="-58"/>
+                            <line x1="0"   y1="58"  x2="0"   y2="68"/>
+                            <line x1="-68" y1="0"   x2="-58" y2="0"/>
+                            <line x1="58"  y1="0"   x2="68"  y2="0"/>
+                        </g>
+
+                        <!-- Intercardinal ticks (shorter) -->
+                        <g stroke="rgba(255,255,255,0.09)" stroke-width="0.75" stroke-linecap="round">
+                            <line x1="48"  y1="-48" x2="54"  y2="-54"/>
+                            <line x1="-48" y1="-48" x2="-54" y2="-54"/>
+                            <line x1="48"  y1="48"  x2="54"  y2="54"/>
+                            <line x1="-48" y1="48"  x2="-54" y2="54"/>
+                        </g>
+
+                        <!-- Dashed inner guide circle -->
+                        <circle r="40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="3 4"/>
+
+                        <!-- Cardinal labels -->
+                        <text x="0"   y="-54" text-anchor="middle" dominant-baseline="middle"
+                              font-size="10" font-weight="700" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.9)" letter-spacing="0.5">N</text>
+                        <text x="0"   y="57"  text-anchor="middle" dominant-baseline="middle"
+                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.35)">S</text>
+                        <text x="57"  y="0"   text-anchor="middle" dominant-baseline="middle"
+                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.35)">E</text>
+                        <text x="-57" y="0"   text-anchor="middle" dominant-baseline="middle"
+                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.35)">W</text>
+
+                        <!-- Intercardinal labels (subtle) -->
+                        <text x="44"  y="-44" text-anchor="middle" dominant-baseline="middle"
+                              font-size="7" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.18)">NE</text>
+                        <text x="-44" y="-44" text-anchor="middle" dominant-baseline="middle"
+                              font-size="7" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.18)">NW</text>
+                        <text x="44"  y="44"  text-anchor="middle" dominant-baseline="middle"
+                              font-size="7" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.18)">SE</text>
+                        <text x="-44" y="44"  text-anchor="middle" dominant-baseline="middle"
+                              font-size="7" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.18)">SW</text>
+
+                        <!-- 10-min average needle (dashed, behind) -->
+                        <g id="wind-needle-avg" style="transform-origin:0px 0px;transform:rotate(0deg)">
+                            <line x1="0" y1="-58" x2="0" y2="22"
+                                  stroke="rgba(255,255,255,0.22)" stroke-width="1.5"
+                                  stroke-dasharray="4 3" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- Main wind needle — tapered diamond, red tip -->
+                        <g id="wind-needle" style="transform-origin:0px 0px;transform:rotate(0deg)">
+                            <!-- full diamond shape (S half fades out) -->
+                            <polygon points="0,-62 -5,-8 0,22 5,-8"
+                                     fill="url(#needle-grad)"/>
+                            <!-- red N tip overlay -->
+                            <polygon points="0,-62 -4,-30 0,-18 4,-30"
+                                     fill="url(#needle-red)"/>
+                            <!-- centre pin -->
+                            <circle r="5" fill="rgba(20,20,30,0.8)"
+                                    stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+                        </g>
+                    </svg>
+
+                    <!-- Speed + direction overlaid in the centre of the rose -->
+                    <div class="rose-centre">
+                        <span class="rose-speed-num" id="hero-wind-speed">--</span>
+                        <span class="rose-speed-unit">km/h</span>
+                        <span class="rose-dir-label" id="wind-compass-label">---</span>
+                    </div>
                 </div>
-                <div class="wind-dir-readout">
-                    <span id="wind-compass-label">---</span>
-                    &nbsp;·&nbsp;
+
+                <!-- Degrees below the rose -->
+                <div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px">
                     <span id="wind-degrees-label">---°</span>
+                </div>
+
+                <!-- Gust row -->
+                <div class="rose-gust-row">
+                    <span class="rose-gust-label">Gust</span>
+                    <span class="rose-gust-val" id="wind-gust">--<span class="rose-gust-unit"> km/h</span></span>
                 </div>
             </div>
 
@@ -936,12 +1031,8 @@
 
         </div>
 
-        <!-- SECONDARY DATA: Gust · Solar · Battery -->
+        <!-- SECONDARY DATA: Solar · Battery -->
         <div class="data-row">
-            <div class="data-card glass">
-                <div class="data-label">Wind Gust</div>
-                <div class="data-value" id="wind-gust">--<span class="data-unit">km/h</span></div>
-            </div>
             <div class="data-card glass">
                 <div class="data-label">Solar Radiation</div>
                 <div class="data-value" id="solar-rad">--<span class="data-unit">W/m²</span></div>
@@ -1174,8 +1265,6 @@
         document.getElementById('current-temp').innerHTML =
             `${fmt(temp)}<span class="temp-unit">${getTempUnit()}</span>${trendSpan}`;
 
-        document.getElementById('feels-like').textContent =
-            feelsLike !== null ? `Feels like ${fmt(feelsLike)}${getTempUnit()}` : 'Feels like --';
 
         // ── Trend pill ───────────────────────────────────────────────────
         const pill = document.getElementById('trend-pill');
