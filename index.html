@@ -473,7 +473,7 @@
         }
         .chart-period {
             font-size: 10px;
-            color: rgba(255,255,255,0.35);
+            color: rgba(255,255,255,0.50);
             letter-spacing: 0.5px;
         }
         .simulated-notice {
@@ -572,25 +572,19 @@
         /* Direction label centred inside rose */
         .rose-centre {
             position: absolute;
-            top: 50%;
+            top: 28%;
             left: 50%;
-            transform: translate(-50%, -44%);
+            transform: translate(-50%, -50%);
             text-align: center;
             pointer-events: none;
         }
         .rose-dir-label {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 500;
             color: rgba(255,255,255,0.88);
             letter-spacing: 1px;
             display: block;
             line-height: 1;
-        }
-        .rose-deg-label {
-            font-size: 11px;
-            color: rgba(255,255,255,0.38);
-            display: block;
-            margin-top: 3px;
         }
         /* Speed | Gust two-column row */
         .rose-speed-gust-row {
@@ -628,7 +622,26 @@
             background: rgba(255,255,255,0.1);
             flex-shrink: 0;
         }
-        /* ── UV card ── */
+        /* ── UV + Dew card — flex column, equal halves ── */
+        .detail-card.uv-dew-card {
+            display: flex;
+            flex-direction: column;
+        }
+        .uv-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 10px;
+        }
+        .dew-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
         .uv-number {
             font-size: 30px;
             font-weight: 200;
@@ -640,7 +653,7 @@
             margin-top: 2px;
             margin-bottom: 10px;
         }
-        /* gradient track (not a bar fill — the marker shows position) */
+        /* gradient track */
         .uv-track {
             height: 5px;
             border-radius: 3px;
@@ -651,7 +664,7 @@
                 #DC2626 75%,
                 #9333EA 100%);
             position: relative;
-            margin-bottom: 14px;
+            margin-bottom: 0;
         }
         .uv-marker {
             width: 10px; height: 10px;
@@ -663,8 +676,6 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.4);
             transition: left 0.4s ease;
         }
-
-        /* Dew point tucked below UV */
         .dew-label {
             font-size: 9px;
             letter-spacing: 1.8px;
@@ -676,6 +687,12 @@
             font-size: 22px;
             font-weight: 200;
             color: #fff;
+            line-height: 1;
+        }
+        .dew-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            margin-top: 4px;
         }
 
         /* ════════════════════════════════════════
@@ -739,7 +756,7 @@
             text-align: center;
             font-size: 11px;
             letter-spacing: 0.4px;
-            color: rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.50);
             padding: 14px 20px 36px;
         }
 
@@ -918,10 +935,10 @@
                         </defs>
 
                         <!-- Outer tick ring -->
-                        <circle r="68" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                        <circle r="68" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1"/>
 
                         <!-- Cardinal axis ticks -->
-                        <g stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-linecap="round">
+                        <g stroke="rgba(255,255,255,0.50)" stroke-width="1" stroke-linecap="round">
                             <line x1="0"   y1="-68" x2="0"   y2="-58"/>
                             <line x1="0"   y1="58"  x2="0"   y2="68"/>
                             <line x1="-68" y1="0"   x2="-58" y2="0"/>
@@ -929,7 +946,7 @@
                         </g>
 
                         <!-- Intercardinal ticks (shorter) -->
-                        <g stroke="rgba(255,255,255,0.09)" stroke-width="0.75" stroke-linecap="round">
+                        <g stroke="rgba(255,255,255,0.30)" stroke-width="0.75" stroke-linecap="round">
                             <line x1="48"  y1="-48" x2="54"  y2="-54"/>
                             <line x1="-48" y1="-48" x2="-54" y2="-54"/>
                             <line x1="48"  y1="48"  x2="54"  y2="54"/>
@@ -937,40 +954,40 @@
                         </g>
 
                         <!-- Dashed inner guide circle -->
-                        <circle r="40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="3 4"/>
+                        <circle r="40" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="0.5" stroke-dasharray="3 4"/>
 
-                        <!-- Cardinal labels -->
+                        <!-- Cardinal labels — all equal weight and brightness -->
                         <text x="0"   y="-54" text-anchor="middle" dominant-baseline="middle"
                               font-size="10" font-weight="700" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.9)" letter-spacing="0.5">N</text>
+                              fill="rgba(255,255,255,0.9)">N</text>
                         <text x="0"   y="57"  text-anchor="middle" dominant-baseline="middle"
-                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.35)">S</text>
+                              font-size="10" font-weight="700" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.9)">S</text>
                         <text x="57"  y="0"   text-anchor="middle" dominant-baseline="middle"
-                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.35)">E</text>
+                              font-size="10" font-weight="700" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.9)">E</text>
                         <text x="-57" y="0"   text-anchor="middle" dominant-baseline="middle"
-                              font-size="9"  font-weight="500" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.35)">W</text>
+                              font-size="10" font-weight="700" font-family="-apple-system,sans-serif"
+                              fill="rgba(255,255,255,0.9)">W</text>
 
-                        <!-- Intercardinal labels (subtle) -->
+                        <!-- Intercardinal labels -->
                         <text x="44"  y="-44" text-anchor="middle" dominant-baseline="middle"
                               font-size="7" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.18)">NE</text>
+                              fill="rgba(255,255,255,0.50)">NE</text>
                         <text x="-44" y="-44" text-anchor="middle" dominant-baseline="middle"
                               font-size="7" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.18)">NW</text>
+                              fill="rgba(255,255,255,0.50)">NW</text>
                         <text x="44"  y="44"  text-anchor="middle" dominant-baseline="middle"
                               font-size="7" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.18)">SE</text>
+                              fill="rgba(255,255,255,0.50)">SE</text>
                         <text x="-44" y="44"  text-anchor="middle" dominant-baseline="middle"
                               font-size="7" font-family="-apple-system,sans-serif"
-                              fill="rgba(255,255,255,0.18)">SW</text>
+                              fill="rgba(255,255,255,0.50)">SW</text>
 
                         <!-- 10-min average needle (dashed, behind) -->
                         <g id="wind-needle-avg" style="transform-origin:0px 0px;transform:rotate(0deg)">
                             <line x1="0" y1="-65" x2="0" y2="28"
-                                  stroke="rgba(255,255,255,0.22)" stroke-width="1.5"
+                                  stroke="rgba(255,255,255,0.45)" stroke-width="1.5"
                                   stroke-dasharray="4 3" stroke-linecap="round"/>
                         </g>
 
@@ -991,7 +1008,6 @@
                     <!-- Direction only overlaid in the centre of the rose -->
                     <div class="rose-centre">
                         <span class="rose-dir-label" id="wind-compass-label">---</span>
-                        <span class="rose-deg-label" id="wind-degrees-label">---°</span>
                     </div>
                 </div>
 
@@ -1009,15 +1025,20 @@
                 </div>
             </div>
 
-            <div class="detail-card glass">
-                <div class="detail-label">UV Index</div>
-                <div class="uv-number" id="uv-display">-</div>
-                <div class="uv-desc" id="uv-desc">--</div>
-                <div class="uv-track">
-                    <div class="uv-marker" id="uv-track-marker" style="left:0%"></div>
+            <div class="detail-card glass uv-dew-card">
+                <div class="uv-section">
+                    <div class="detail-label">UV Index</div>
+                    <div class="uv-number" id="uv-display">-</div>
+                    <div class="uv-desc" id="uv-desc">--</div>
+                    <div class="uv-track">
+                        <div class="uv-marker" id="uv-track-marker" style="left:0%"></div>
+                    </div>
                 </div>
-                <div class="dew-label">Dew Point</div>
-                <div class="dew-value" id="dew-point">--<span style="font-size:13px;color:rgba(255,255,255,0.4);margin-left:2px">°C</span></div>
+                <div class="dew-section">
+                    <div class="dew-label">Dew Point</div>
+                    <div class="dew-value" id="dew-point">--<span style="font-size:13px;color:rgba(255,255,255,0.4);margin-left:2px">°C</span></div>
+                    <div class="dew-desc" id="dew-desc">--</div>
+                </div>
             </div>
 
         </div>
@@ -1025,8 +1046,9 @@
         <!-- TEMP CHART (moved below Wind/UV) -->
         <div class="chart-section glass">
             <div class="chart-header" style="padding:16px 18px 0">
-                <div class="chart-title">Temperature · 24 Hours</div>
+                <div class="chart-title">Temperature</div>
                 <div class="chart-period">
+                    24 Hours
                     <span id="temp-chart-notice" class="simulated-notice">simulated</span>
                 </div>
             </div>
@@ -1166,6 +1188,24 @@
         if (solarRad < 200)                      return { icon: '☁️',  name: 'Cloudy',        key: 'cloudy'        };
         if (solarRad < 500)                      return { icon: '⛅',  name: 'Partly Cloudy', key: 'partly-cloudy' };
         return                                          { icon: '☀️',  name: 'Sunny',         key: 'sunny'         };
+    }
+
+    const DEW_RANGES = [
+        { max:  5, label: 'Crisp and dry'               },
+        { max: 10, label: 'Dry'                          },
+        { max: 13, label: 'Comfortable'                  },
+        { max: 16, label: 'Pleasant, slightly humid'     },
+        { max: 18, label: 'Slightly sticky'              },
+        { max: 21, label: 'Muggy'                        },
+        { max: 24, label: 'Very muggy & uncomfortable'   },
+        { max: 26, label: 'Oppressive'                   },
+    ];
+    function getDewPointLabel(dewC) {
+        if (dewC === null) return '--';
+        for (const r of DEW_RANGES) {
+            if (dewC < r.max) return r.label;
+        }
+        return 'Tropical & suffocating';
     }
 
     const UV_LABELS = ['Low','Low','Low','Moderate','Moderate','Moderate','High','High','Very High','Very High','Very High','Extreme'];
@@ -1315,11 +1355,12 @@
         const uvPct = uv !== null ? Math.min((uv / 11) * 100, 100) : 0;
         document.getElementById('uv-track-marker').style.left = `${uvPct}%`;
 
-        // ── Dew point ────────────────────────────────────────────────────
+        // ── Dew point + description ──────────────────────────────────────
         document.getElementById('dew-point').innerHTML =
             dewPoint !== null
                 ? `${fmt(dewPoint)}<span style="font-size:13px;color:rgba(255,255,255,0.4);margin-left:2px">${getTempUnit()}</span>`
                 : `--<span style="font-size:13px;color:rgba(255,255,255,0.4);margin-left:2px">${getTempUnit()}</span>`;
+        document.getElementById('dew-desc').textContent = getDewPointLabel(dewPointC);
 
         // ── Secondary data cards ─────────────────────────────────────────
         document.getElementById('rain-today').innerHTML =
@@ -1357,8 +1398,6 @@
                 `rotate(${windDir}deg)`;
             document.getElementById('wind-compass-label').textContent =
                 getCompassDirection(windDir);
-            document.getElementById('wind-degrees-label').textContent =
-                `${fmt(windDir, 0)}°`;
         }
         if (windDirAvg !== null) {
             document.getElementById('wind-needle-avg').style.transform =
@@ -1380,7 +1419,7 @@
         whiteFill:'rgba(255,255,255,0.08)',
         blue:     'rgba(147,197,253,0.8)',
         blueFill: 'rgba(147,197,253,0.08)',
-        muted:    'rgba(255,255,255,0.3)',
+        muted:    'rgba(255,255,255,0.5)',
         grid:     'rgba(255,255,255,0.07)',
     };
 
