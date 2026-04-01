@@ -50,32 +50,6 @@
             overflow: hidden;
         }
 
-        /* ── Sun glow ── */
-        .fx-sun {
-            position: absolute;
-            top: 48px;
-            right: 15%;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,240,120,0.95) 0%, rgba(255,200,50,0.6) 40%, transparent 70%);
-            opacity: 0;
-            transition: opacity 1.2s ease;
-        }
-        .fx-sun-halo {
-            position: absolute;
-            top: -30px; left: -30px;
-            width: 150px; height: 150px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,210,80,0.25) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 1.2s ease;
-        }
-        body[data-cond="sunny"]         .fx-sun,
-        body[data-cond="sunny"]         .fx-sun-halo,
-        body[data-cond="partly-cloudy"] .fx-sun { opacity: 1; }
-        body[data-cond="partly-cloudy"] .fx-sun-halo { opacity: 0.5; }
-
         /* ── Moon ── */
         /* ── Clouds (shared across cloudy + rainy) ── */
         .fx-cloud {
@@ -402,30 +376,37 @@
         .temp-trend.falling { color: #93C5FD; }
         .temp-trend.steady  { color: rgba(255,255,255,0.35); }
 
-        .feels-like {
-            font-size: 14px;
-            color: rgba(255,255,255,0.6);
+        .condition-name {
+            font-size: 17px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.9);
             margin-bottom: 3px;
         }
-        .condition-name {
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
+        .feels-like {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
         }
 
-        /* Trend pill */
-        .trend-pill {
-            display: inline-flex;
+        /* Trend pill — inline with condition */
+        .condition-row {
+            display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 3px;
+        }
+        .trend-pill {
+            display: none;
+            align-items: center;
+            gap: 4px;
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.18);
             border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 12px;
+            padding: 3px 9px;
+            font-size: 11px;
             color: rgba(255,255,255,0.8);
-            margin-top: 10px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .trend-pill.rising  { border-color: rgba(252,211,77,0.4); color: #FCD34D; }
         .trend-pill.falling { border-color: rgba(147,197,253,0.4); color: #93C5FD; }
@@ -745,7 +726,7 @@
             #current-temp { font-size: 96px; }
             .weather-icon { font-size: 60px; }
 
-            .data-row { grid-template-columns: repeat(4, 1fr); }
+            .data-row { grid-template-columns: repeat(3, 1fr); }
         }
 
         /* ════════════════════════════════════════
@@ -766,7 +747,6 @@
 
 <!-- ══ ATMOSPHERE LAYER (fixed, behind everything) ══ -->
 <div class="sky-fx" id="sky-fx">
-    <div class="fx-sun"><div class="fx-sun-halo"></div></div>
     <div class="fx-stars" id="fx-stars"></div>
     <div class="fx-rain"  id="fx-rain"></div>
     <!-- Clouds -->
@@ -840,9 +820,11 @@
                 <div class="weather-icon" id="weather-icon">⛅</div>
                 <div id="current-temp">--<span class="temp-unit">°C</span></div>
             </div>
+            <div class="condition-row">
+                <div class="condition-name" id="condition-name">--</div>
+                <div class="trend-pill" id="trend-pill"></div>
+            </div>
             <div class="feels-like" id="feels-like">Feels like --</div>
-            <div class="condition-name" id="condition-name">--</div>
-            <div class="trend-pill" id="trend-pill" style="display:none"></div>
         </div>
 
         <!-- STATS STRIP -->
@@ -881,10 +863,13 @@
         <!-- IN / OUT -->
         <div class="inout-row">
             <div class="inout-card glass">
-                <div class="inout-eyebrow">Outside</div>
-                <div class="inout-temp" id="out-temp">--°</div>
-                <div class="inout-hum" id="out-humidity">--%</div>
+                <div class="inout-eyebrow">Rain Today</div>
+                <div class="inout-temp" id="rain-today">--<span style="font-size:16px;color:rgba(255,255,255,0.5);margin-left:3px">mm</span></div>
+                <div class="inout-hum" id="rain-rate">-- mm/hr</div>
             </div>
+            <!-- out-temp and out-humidity kept hidden so JS can still write to them safely -->
+            <span id="out-temp" style="display:none"></span>
+            <span id="out-humidity" style="display:none"></span>
             <div class="inout-card glass">
                 <div class="inout-eyebrow">Inside</div>
                 <div class="inout-temp" id="in-temp">--°</div>
@@ -951,20 +936,15 @@
 
         </div>
 
-        <!-- SECONDARY DATA: Rain · Solar · Gust · Battery -->
+        <!-- SECONDARY DATA: Gust · Solar · Battery -->
         <div class="data-row">
             <div class="data-card glass">
-                <div class="data-label">Rain Today</div>
-                <div class="data-value" id="rain-today">--<span class="data-unit">mm</span></div>
-                <div class="data-sub" id="rain-rate">-- mm/hr</div>
+                <div class="data-label">Wind Gust</div>
+                <div class="data-value" id="wind-gust">--<span class="data-unit">km/h</span></div>
             </div>
             <div class="data-card glass">
                 <div class="data-label">Solar Radiation</div>
                 <div class="data-value" id="solar-rad">--<span class="data-unit">W/m²</span></div>
-            </div>
-            <div class="data-card glass">
-                <div class="data-label">Wind Gust</div>
-                <div class="data-value" id="wind-gust">--<span class="data-unit">km/h</span></div>
             </div>
             <div class="data-card glass">
                 <div class="data-label">Sensor Battery</div>
