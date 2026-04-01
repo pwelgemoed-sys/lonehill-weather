@@ -469,7 +469,7 @@
             font-weight: 400;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
         }
         .chart-period {
             font-size: 10px;
@@ -513,7 +513,7 @@
             font-size: 9px;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
             margin-bottom: 8px;
         }
         .inout-temp {
@@ -546,7 +546,7 @@
             font-size: 9px;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
             margin-bottom: 12px;
         }
 
@@ -569,62 +569,65 @@
             transform-origin: 0px 0px;
             transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
         }
-        /* Speed + direction overlaid in the rose centre */
+        /* Direction label centred inside rose */
         .rose-centre {
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -44%);
             text-align: center;
             pointer-events: none;
         }
-        .rose-speed-num {
-            font-size: 24px;
-            font-weight: 200;
-            color: #fff;
-            line-height: 1;
-            display: block;
-        }
-        .rose-speed-unit {
-            font-size: 10px;
-            color: rgba(255,255,255,0.4);
-            display: block;
-            margin-top: 1px;
-        }
         .rose-dir-label {
-            font-size: 12px;
+            font-size: 18px;
             font-weight: 500;
-            color: rgba(255,255,255,0.75);
+            color: rgba(255,255,255,0.88);
             letter-spacing: 1px;
+            display: block;
+            line-height: 1;
+        }
+        .rose-deg-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.38);
             display: block;
             margin-top: 3px;
         }
-        /* Gust row below the rose */
-        .rose-gust-row {
+        /* Speed | Gust two-column row */
+        .rose-speed-gust-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             width: 100%;
             padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.08);
             margin-top: 4px;
         }
-        .rose-gust-label {
+        .rose-sg-block {
+            flex: 1;
+            text-align: center;
+        }
+        .rose-sg-label {
             font-size: 9px;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
+            margin-bottom: 4px;
         }
-        .rose-gust-val {
-            font-size: 16px;
+        .rose-sg-val {
+            font-size: 18px;
             font-weight: 300;
-            color: rgba(255,255,255,0.85);
+            color: #fff;
+            line-height: 1;
         }
-        .rose-gust-unit {
+        .rose-sg-unit {
             font-size: 10px;
             color: rgba(255,255,255,0.4);
         }
-
+        .rose-sg-divider {
+            width: 1px;
+            height: 32px;
+            background: rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
         /* ── UV card ── */
         .uv-number {
             font-size: 30px;
@@ -666,7 +669,7 @@
             font-size: 9px;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
             margin-bottom: 4px;
         }
         .dew-value {
@@ -694,7 +697,7 @@
             font-size: 9px;
             letter-spacing: 1.8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.38);
+            color: rgba(255,255,255,0.50);
             margin-bottom: 6px;
         }
         .data-value {
@@ -878,19 +881,6 @@
         <span id="hero-uv" style="display:none">-</span>
         <span id="uv-bar-fill" style="display:none"></span>
 
-        <!-- 24H TEMP CHART -->
-        <div class="chart-section glass">
-            <div class="chart-header" style="padding:16px 18px 0">
-                <div class="chart-title">Temperature · 24 Hours</div>
-                <div class="chart-period">
-                    <span id="temp-chart-notice" class="simulated-notice">simulated</span>
-                </div>
-            </div>
-            <div class="chart-wrap" style="height:160px;padding:0 12px 14px">
-                <canvas id="temp-humidity-chart"></canvas>
-            </div>
-        </div>
-
         <!-- IN / OUT -->
         <div class="inout-row">
             <div class="inout-card glass">
@@ -917,11 +907,11 @@
                 <div class="rose-wrap">
                     <svg class="compass-svg" viewBox="-74 -74 148 148">
                         <defs>
-                            <linearGradient id="needle-grad" x1="0" y1="-62" x2="0" y2="18" gradientUnits="userSpaceOnUse">
+                            <linearGradient id="needle-grad" x1="0" y1="-68" x2="0" y2="28" gradientUnits="userSpaceOnUse">
                                 <stop offset="0%"   stop-color="rgba(255,255,255,0.85)"/>
                                 <stop offset="100%" stop-color="rgba(255,255,255,0.18)"/>
                             </linearGradient>
-                            <linearGradient id="needle-red" x1="0" y1="-62" x2="0" y2="-28" gradientUnits="userSpaceOnUse">
+                            <linearGradient id="needle-red" x1="0" y1="-68" x2="0" y2="-30" gradientUnits="userSpaceOnUse">
                                 <stop offset="0%"   stop-color="#FF3333"/>
                                 <stop offset="100%" stop-color="#FF8888"/>
                             </linearGradient>
@@ -979,18 +969,18 @@
 
                         <!-- 10-min average needle (dashed, behind) -->
                         <g id="wind-needle-avg" style="transform-origin:0px 0px;transform:rotate(0deg)">
-                            <line x1="0" y1="-58" x2="0" y2="22"
+                            <line x1="0" y1="-65" x2="0" y2="28"
                                   stroke="rgba(255,255,255,0.22)" stroke-width="1.5"
                                   stroke-dasharray="4 3" stroke-linecap="round"/>
                         </g>
 
                         <!-- Main wind needle — tapered diamond, red tip -->
                         <g id="wind-needle" style="transform-origin:0px 0px;transform:rotate(0deg)">
-                            <!-- full diamond shape (S half fades out) -->
-                            <polygon points="0,-62 -5,-8 0,22 5,-8"
+                            <!-- full diamond shape -->
+                            <polygon points="0,-68 -5,-6 0,28 5,-6"
                                      fill="url(#needle-grad)"/>
                             <!-- red N tip overlay -->
-                            <polygon points="0,-62 -4,-30 0,-18 4,-30"
+                            <polygon points="0,-68 -4,-32 0,-20 4,-32"
                                      fill="url(#needle-red)"/>
                             <!-- centre pin -->
                             <circle r="5" fill="rgba(20,20,30,0.8)"
@@ -998,23 +988,24 @@
                         </g>
                     </svg>
 
-                    <!-- Speed + direction overlaid in the centre of the rose -->
+                    <!-- Direction only overlaid in the centre of the rose -->
                     <div class="rose-centre">
-                        <span class="rose-speed-num" id="hero-wind-speed">--</span>
-                        <span class="rose-speed-unit">km/h</span>
                         <span class="rose-dir-label" id="wind-compass-label">---</span>
+                        <span class="rose-deg-label" id="wind-degrees-label">---°</span>
                     </div>
                 </div>
 
-                <!-- Degrees below the rose -->
-                <div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px">
-                    <span id="wind-degrees-label">---°</span>
-                </div>
-
-                <!-- Gust row -->
-                <div class="rose-gust-row">
-                    <span class="rose-gust-label">Gust</span>
-                    <span class="rose-gust-val" id="wind-gust">--<span class="rose-gust-unit"> km/h</span></span>
+                <!-- Speed | Gust row -->
+                <div class="rose-speed-gust-row">
+                    <div class="rose-sg-block">
+                        <div class="rose-sg-label">Speed</div>
+                        <div class="rose-sg-val"><span id="hero-wind-speed">--</span><span class="rose-sg-unit"> km/h</span></div>
+                    </div>
+                    <div class="rose-sg-divider"></div>
+                    <div class="rose-sg-block">
+                        <div class="rose-sg-label">Gust</div>
+                        <div class="rose-sg-val"><span id="wind-gust">--</span><span class="rose-sg-unit"> km/h</span></div>
+                    </div>
                 </div>
             </div>
 
@@ -1031,16 +1022,16 @@
 
         </div>
 
-        <!-- SECONDARY DATA: Solar · Battery -->
-        <div class="data-row">
-            <div class="data-card glass">
-                <div class="data-label">Solar Radiation</div>
-                <div class="data-value" id="solar-rad">--<span class="data-unit">W/m²</span></div>
+        <!-- TEMP CHART (moved below Wind/UV) -->
+        <div class="chart-section glass">
+            <div class="chart-header" style="padding:16px 18px 0">
+                <div class="chart-title">Temperature · 24 Hours</div>
+                <div class="chart-period">
+                    <span id="temp-chart-notice" class="simulated-notice">simulated</span>
+                </div>
             </div>
-            <div class="data-card glass">
-                <div class="data-label">Sensor Battery</div>
-                <div class="data-value" id="battery-status">--<span class="data-unit">V</span></div>
-                <div class="data-sub" id="battery-level">--</div>
+            <div class="chart-wrap" style="height:160px;padding:0 12px 14px">
+                <canvas id="temp-humidity-chart"></canvas>
             </div>
         </div>
 
@@ -1066,6 +1057,19 @@
             </div>
             <div class="chart-wrap" style="padding:0 12px 12px">
                 <canvas id="rainfall-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- SECONDARY DATA: Solar · Battery -->
+        <div class="data-row">
+            <div class="data-card glass">
+                <div class="data-label">Solar Radiation</div>
+                <div class="data-value" id="solar-rad">--<span class="data-unit">W/m²</span></div>
+            </div>
+            <div class="data-card glass">
+                <div class="data-label">Sensor Battery</div>
+                <div class="data-value" id="battery-status">--<span class="data-unit">V</span></div>
+                <div class="data-sub" id="battery-level">--</div>
             </div>
         </div>
 
@@ -1324,8 +1328,8 @@
             rainRate !== null ? `${fmt(rainRate)} mm/hr` : '-- mm/hr';
         document.getElementById('solar-rad').innerHTML =
             `${fmt(solarRad, 0)}<span class="data-unit">W/m²</span>`;
-        document.getElementById('wind-gust').innerHTML =
-            `${fmt(windGust)}<span class="data-unit">km/h</span>`;
+        document.getElementById('wind-gust').textContent =
+            windGust !== null ? fmt(windGust) : '--';
         document.getElementById('rain-monthly').textContent =
             rainMonthly !== null ? fmt(rainMonthly) : '--';
 
@@ -1360,7 +1364,7 @@
             document.getElementById('wind-needle-avg').style.transform =
                 `rotate(${windDirAvg}deg)`;
         }
-        // Wind speed in compass card
+        // Wind speed in compass speed/gust row
         const wsEl = document.getElementById('hero-wind-speed');
         if (wsEl) wsEl.textContent = windSpeed !== null ? fmt(windSpeed) : '--';
     }
@@ -1525,29 +1529,27 @@
         const toMm = (key) => { const v = getValue(rainfall[key]); return v !== null ? inToMm(v) : 0; };
 
         const values = [
-            toMm('daily'), toMm('event'), toMm('1_hour'),
-            toMm('24_hours'), toMm('weekly'), toMm('monthly'), toMm('yearly'),
+            toMm('event'), toMm('1_hour'),
+            toMm('24_hours'), toMm('daily'), toMm('weekly'),
         ];
 
         charts.rainfall = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Today','Event','1 h','24 h','Week','Month','Year'],
+                labels: ['Event','1 h','24 h','Today','Week'],
                 datasets: [{
                     label: 'Rainfall (mm)',
                     data: values,
                     backgroundColor: [
-                        C.amber, C.amber, C.amber, C.amber,
-                        'rgba(147,197,253,0.6)',
-                        'rgba(147,197,253,0.8)',
-                        'rgba(251,113,133,0.6)',
+                        C.amber, C.amber, C.amber,
+                        'rgba(147,197,253,0.7)',
+                        'rgba(147,197,253,0.45)',
                     ],
                     borderColor: [
                         'rgba(251,191,36,0.8)','rgba(251,191,36,0.8)',
-                        'rgba(251,191,36,0.8)','rgba(251,191,36,0.8)',
-                        'rgba(147,197,253,0.8)',
-                        'rgba(147,197,253,1)',
-                        'rgba(251,113,133,0.9)',
+                        'rgba(251,191,36,0.8)',
+                        'rgba(147,197,253,0.9)',
+                        'rgba(147,197,253,0.6)',
                     ],
                     borderWidth: 1,
                     borderRadius: { topLeft: 4, topRight: 4 },
