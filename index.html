@@ -40,11 +40,6 @@ body[data-cond="night"]        { background: linear-gradient(170deg,#020308 0%,#
 ═══════════════════════════════════════════ */
 .sky-fx { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
 
-.fx-cloud { position:absolute; background:rgba(255,255,255,0.07); border-radius:60px; opacity:0; transition:opacity 1.2s ease; }
-body[data-cond="cloudy"]        .fx-cloud,
-body[data-cond="rainy"]         .fx-cloud { opacity:1; }
-body[data-cond="partly-cloudy"] .fx-cloud { opacity:0.5; }
-
 .fx-stars { position:absolute; inset:0; opacity:0; transition:opacity 1.4s ease; }
 body[data-cond="night"] .fx-stars { opacity:1; }
 .star { position:absolute; border-radius:50%; background:#fff; }
@@ -183,12 +178,13 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 /* Storm Risk card */
 .storm-card { padding:18px; display:flex; flex-direction:column; }
 .storm-indicator { display:flex; align-items:center; gap:6px; margin:6px 0 12px; }
-.storm-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; transition:background 0.3s; }
+.storm-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; transition:background 0.3s; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20); }
 .storm-level { font-size:15px; font-weight:500; margin-left:2px; transition:color 0.3s; }
 
 
 /* UV card */
 .uv-card { padding:18px; display:flex; flex-direction:column; }
+.uv-card > .card-label { font-size:10px; letter-spacing:1.6px; }
 .uv-big { font-size:30px; font-weight:200; color:#fff; line-height:1; margin-top:4px; }
 .uv-desc { font-size:11px; color:rgba(255,255,255,0.45); margin-top:2px; margin-bottom:10px; }
 .uv-track { height:5px; border-radius:3px; background:linear-gradient(to right,#22C55E 0%,#EAB308 33%,#F97316 55%,#DC2626 75%,#9333EA 100%); position:relative; margin-bottom:12px; }
@@ -241,10 +237,6 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 <div class="sky-fx" id="sky-fx">
     <div class="fx-stars" id="fx-stars"></div>
     <div class="fx-rain"  id="fx-rain"></div>
-    <div class="fx-cloud" style="width:140px;height:42px;top:70px;left:-20px"></div>
-    <div class="fx-cloud" style="width:100px;height:30px;top:105px;left:80px"></div>
-    <div class="fx-cloud" style="width:160px;height:50px;top:56px;right:-30px"></div>
-    <div class="fx-cloud" style="width:110px;height:34px;top:140px;right:40px"></div>
 </div>
 
 <div class="refreshing-indicator" id="refreshing-indicator">
@@ -668,10 +660,10 @@ function calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend) {
     const score = [highDew, risingTemp, fallingPres, risingDew].filter(Boolean).length;
 
     let level, color, activeDots;
-    if (rapidFall)   { level='Elevated'; color='#FCA5A5'; activeDots=3; }
+    if (rapidFall)    { level='Elevated'; color='#FCA5A5'; activeDots=3; }
     else if (score>=3){ level='Possible'; color='#FCD34D'; activeDots=2; }
     else if (score>=2){ level='Possible'; color='#FCD34D'; activeDots=1; }
-    else              { level='Low';      color='rgba(255,255,255,0.50)'; activeDots=0; }
+    else              { level='Low';      color='#86EFAC'; activeDots=1; }
 
     return { level, color, activeDots, factors };
 }
