@@ -531,7 +531,7 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 // ═══════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════
-let charts = {}, refreshTimer = null, lastFetchedData = null;
+let charts = {}, refreshTimer = null, lastFetchedData = null, sunTimes = null;
 
 const preferences = {
     tempUnit:        localStorage.getItem('tempUnit') || 'C',
@@ -571,8 +571,18 @@ function getCompassDirection(deg) {
 }
 
 function getWeatherCondition(solarRad, rainRate) {
-    if (rainRate !== null && rainRate > 0)   return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
-    if (solarRad === null || solarRad === 0) return { icon:'🌙',  name:'Clear Night',   key:'night'         };
+    const now = Date.now();
+
+    // Night = outside civil twilight (includes dusk/dawn glow).
+    // Falls back to solarRad === 0 if sunrise/sunset data is unavailable.
+    const isNight = sunTimes
+        ? now < sunTimes.civil_twilight_begin || now > sunTimes.civil_twilight_end
+        : solarRad === null || solarRad === 0;
+
+    if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
+    if (isNight)                           return { icon:'🌙',  name:'Clear Night',   key:'night'         };
+    // Daytime — use solar radiation to grade cloud cover
+    if (solarRad === null || solarRad < 50)  return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
     if (solarRad < 200)                      return { icon:'☁️',  name:'Cloudy',        key:'cloudy'        };
     if (solarRad < 500)                      return { icon:'⛅',  name:'Partly Cloudy', key:'partly-cloudy' };
     return                                          { icon:'☀️',  name:'Sunny',         key:'sunny'         };
@@ -678,6 +688,35 @@ function drawPressureSparkline(historyArray) {
     }
     d += ` L${W},${H} L0,${H} Z`;
     path.setAttribute('d', d);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUNRISE / SUNSET  (api.sunrise-sunset.org — free, no key)
+// ═══════════════════════════════════════════════════════════════════════════
+const SUN_LAT = -26.0376, SUN_LNG = 28.0241;  // Lonehill, Johannesburg
+const SUN_CACHE_KEY = 'sunsunset_v1';
+
+async function loadSunTimes() {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' }); // YYYY-MM-DD
+    try {
+        const cached = JSON.parse(localStorage.getItem(SUN_CACHE_KEY) || 'null');
+        if (cached?.date === today) { sunTimes = cached; return; }
+    } catch (_) {}
+
+    try {
+        const res  = await fetch(`https://api.sunrise-sunset.org/json?lat=${SUN_LAT}&lng=${SUN_LNG}&formatted=0&date=${today}`);
+        const json = await res.json();
+        if (json.status === 'OK') {
+            sunTimes = {
+                date:                 today,
+                civil_twilight_begin: new Date(json.results.civil_twilight_begin).getTime(),
+                sunrise:              new Date(json.results.sunrise).getTime(),
+                sunset:               new Date(json.results.sunset).getTime(),
+                civil_twilight_end:   new Date(json.results.civil_twilight_end).getTime(),
+            };
+            localStorage.setItem(SUN_CACHE_KEY, JSON.stringify(sunTimes));
+        }
+    } catch (_) { /* network error — sunTimes stays null, fallback logic applies */ }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -984,6 +1023,9 @@ async function refreshData(isInitial = false) {
     const btn = document.getElementById('manual-refresh');
     if (btn) btn.disabled = true;
     if (!isInitial) showRefreshIndicator(true);
+
+    // Re-validate sun times on every refresh (loadSunTimes is a no-op if cache is still today's)
+    await loadSunTimes();
 
     try {
         const data = await fetchAllData();
