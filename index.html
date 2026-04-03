@@ -580,7 +580,7 @@ function getWeatherCondition(solarRad, rainRate) {
         : solarRad === null || solarRad === 0;
 
     if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
-    if (isNight)                           return { icon:'🌙',  name:'Clear Night',   key:'night'         };
+    if (isNight)                           return { icon:'🌙',  name:'Night',         key:'night'         };
     // Daytime — use solar radiation to grade cloud cover
     if (solarRad === null || solarRad < 50)  return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
     if (solarRad < 200)                      return { icon:'☁️',  name:'Cloudy',        key:'cloudy'        };
@@ -613,6 +613,34 @@ function getUVLabel(uv) {
 // ═══════════════════════════════════════════════════════════════════════════
 // TREND CALCULATIONS
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Convert an Ecowitt history list object { "unixTs": "value", ... } into the
+// same [{time, value}] format used by KV trends. converterFn transforms raw
+// API units (°F for temp/dew, inHg for pressure) into metric.
+function ecowittListToTrendArray(listObj, converterFn) {
+    if (!listObj || typeof listObj !== 'object') return [];
+    return Object.entries(listObj)
+        .map(([ts, val]) => {
+            const n = parseFloat(val);
+            return isNaN(n) ? null : { time: parseInt(ts) * 1000, value: converterFn(n) };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.time - b.time);
+}
+
+// Build all three trend arrays from Ecowitt history, falling back to KV data
+// when a given channel is absent. Returns { temperature, pressure, dewPoint }.
+function buildTrendArrays(historyData, kvTrends) {
+    const tempList    = historyData?.outdoor?.temperature?.list;
+    const pressList   = historyData?.pressure?.relative?.list;
+    const dewList     = historyData?.outdoor?.dew_point?.list;
+
+    return {
+        temperature: tempList  ? ecowittListToTrendArray(tempList,  fToC)      : (kvTrends?.temperature || []),
+        pressure:    pressList ? ecowittListToTrendArray(pressList, inHgToHPa) : (kvTrends?.pressure    || []),
+        dewPoint:    dewList   ? ecowittListToTrendArray(dewList,   fToC)      : (kvTrends?.dewPoint     || []),
+    };
+}
 function calculateTrendFromHistory(historyArray, windowMs) {
     if (!historyArray || historyArray.length < 2)
         return { trend:'steady', text:'', cssClass:'steady', delta:0 };
@@ -693,7 +721,7 @@ function drawPressureSparkline(historyArray) {
 // ═══════════════════════════════════════════════════════════════════════════
 // SUNRISE / SUNSET  (api.sunrise-sunset.org — free, no key)
 // ═══════════════════════════════════════════════════════════════════════════
-const SUN_LAT = -26.0376, SUN_LNG = 28.0241;  // Lonehill, Johannesburg
+const SUN_LAT = -26.0007, SUN_LNG = 28.0287;  // Lonehill, Johannesburg
 const SUN_CACHE_KEY = 'sunsunset_v1';
 
 async function loadSunTimes() {
@@ -734,7 +762,7 @@ async function fetchAllData() {
 // ═══════════════════════════════════════════════════════════════════════════
 // DISPLAY
 // ═══════════════════════════════════════════════════════════════════════════
-function displayCurrentConditions(data, trends) {
+function displayCurrentConditions(data, kvTrends) {
     const outdoor  = data.realtime?.outdoor              || {};
     const indoor   = data.realtime?.indoor               || {};
     const wind     = data.realtime?.wind                 || {};
@@ -767,9 +795,12 @@ function displayCurrentConditions(data, trends) {
     const batteryV    = getValue(battery.haptic_array_battery);
 
     // ── Trends & intelligence ─────────────────────────────────────────────
-    const tempTrend    = calculateTrendFromHistory(trends?.temperature, 3600000);
-    const dewTrend     = calculateTrendFromHistory(trends?.dewPoint,    3 * 3600000);
-    const pressureRate = calculatePressureRate(trends?.pressure);
+    // Ecowitt history is the primary source (always complete, offline-safe).
+    // KV trends are the fallback when the history call failed.
+    const trendArrays  = buildTrendArrays(data.history, kvTrends);
+    const tempTrend    = calculateTrendFromHistory(trendArrays.temperature, 3 * 3600000);
+    const dewTrend     = calculateTrendFromHistory(trendArrays.dewPoint,    3 * 3600000);
+    const pressureRate = calculatePressureRate(trendArrays.pressure);
     const stormRisk    = calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend);
     const rateDisplay  = getPressureRateDisplay(pressureRate);
 
@@ -786,7 +817,7 @@ function displayCurrentConditions(data, trends) {
     const pill = document.getElementById('trend-pill');
     if (tempTrend.text && Math.abs(tempTrend.delta) > 0) {
         const dir = tempTrend.trend === 'rising' ? 'Rising' : 'Falling';
-        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.delta).toFixed(1)}° past hour`;
+        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.delta).toFixed(1)}° past 3 hours`;
         pill.className     = `trend-pill ${tempTrend.cssClass}`;
         pill.style.display = 'inline-flex';
     } else {
@@ -832,7 +863,7 @@ function displayCurrentConditions(data, trends) {
     const pill2 = document.getElementById('pres-rate-pill');
     pill2.className = `pres-rate-pill ${rateDisplay.cls}`;
     document.getElementById('pres-rate-text').textContent = rateDisplay.text;
-    drawPressureSparkline(trends?.pressure);
+    drawPressureSparkline(trendArrays.pressure);
 
     // ── Storm Risk card ───────────────────────────────────────────────────
     const dotColors = ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'];
