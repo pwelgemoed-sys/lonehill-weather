@@ -645,13 +645,6 @@ function calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend) {
     const rapidFall   = pressureRate !== null && pressureRate < -2.0;
     const risingDew   = dewTrend?.trend === 'rising';
 
-    const factors = [
-        { label:'Dew point',   met:highDew,     note: dewPointC !== null ? `${dewPointC.toFixed(1)}°C${highDew ? ' >16°C threshold' : ''}` : '--'    },
-        { label:'Temperature', met:risingTemp,   note: risingTemp ? 'Rising' : 'Stable / falling'                                                     },
-        { label:'Pressure',    met:fallingPres,  note: rapidFall ? 'Rapid drop ⚡' : fallingPres ? 'Falling' : 'Steady / rising'                      },
-        { label:'Dew trend',   met:risingDew,    note: risingDew ? 'Moisture increasing' : 'Stable / drying'                                          },
-    ];
-
     const score = [highDew, risingTemp, fallingPres, risingDew].filter(Boolean).length;
 
     let level, color, activeDots;
@@ -660,7 +653,7 @@ function calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend) {
     else if (score>=2){ level='Possible'; color='#FCD34D'; activeDots=1; }
     else              { level='Low';      color='#86EFAC'; activeDots=1; }
 
-    return { level, color, activeDots, factors };
+    return { level, color, activeDots };
 }
 
 // Draw 3-hour pressure sparkline SVG
