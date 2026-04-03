@@ -583,9 +583,9 @@ function getWeatherCondition(solarRad, rainRate) {
     if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
     if (isNight)                           return { icon:'🌙',  name:'Night',         key:'night'         };
     // Daytime — use solar radiation to grade cloud cover
-    if (solarRad === null || solarRad < 50)  return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
-    if (solarRad < 200)                      return { icon:'☁️',  name:'Cloudy',        key:'cloudy'        };
-    if (solarRad < 500)                      return { icon:'⛅',  name:'Partly Cloudy', key:'partly-cloudy' };
+    if (solarRad === null || solarRad < 100) return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
+    if (solarRad < 250)                      return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
+    if (solarRad < 500)                      return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
     return                                          { icon:'☀️',  name:'Sunny',         key:'sunny'         };
 }
 
@@ -686,11 +686,15 @@ function calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend) {
 
     const score = [highDew, risingTemp, fallingPres, risingDew].filter(Boolean).length;
 
+    // rapidFall amplifies but doesn't unconditionally override — low dew point
+    // limits storm potential even with a collapsing pressure trend.
+    // score already counts fallingPres (< −1 hPa/hr); rapidFall (< −2) needs
+    // at least one additional factor (score ≥ 2) to reach Elevated.
     let level, color, activeDots;
-    if (rapidFall)    { level='Elevated'; color='#FCA5A5'; activeDots=3; }
-    else if (score>=3){ level='Possible'; color='#FCD34D'; activeDots=2; }
-    else if (score>=2){ level='Possible'; color='#FCD34D'; activeDots=1; }
-    else              { level='Low';      color='#86EFAC'; activeDots=1; }
+    if (rapidFall && score >= 2) { level='Elevated'; color='#FCA5A5'; activeDots=3; }
+    else if (score >= 3)         { level='Possible'; color='#FCD34D'; activeDots=2; }
+    else if (score >= 2)         { level='Possible'; color='#FCD34D'; activeDots=1; }
+    else                         { level='Low';      color='#86EFAC'; activeDots=1; }
 
     return { level, color, activeDots };
 }
