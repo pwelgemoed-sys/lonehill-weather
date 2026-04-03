@@ -151,25 +151,25 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 ═══════════════════════════════════════════ */
 .two-col-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 16px 0; }
 
-/* How it Feels card */
-.feels-card { padding:18px; display:flex; flex-direction:column; gap:0; }
-.feels-row { display:flex; flex-direction:column; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08); }
-.feels-row:first-child { padding-top:0; }
-.feels-row:last-child { border-bottom:none; padding-bottom:0; }
-.feels-val { font-size:24px; font-weight:200; color:#fff; line-height:1; margin-top:4px; }
-.feels-desc { font-size:11px; color:rgba(255,255,255,0.40); margin-top:3px; }
+/* Three-column strip — Feels Like | Humidity | Dew Point */
+.three-col-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:10px 16px 0; }
+.metric-card { padding:14px 12px; display:flex; flex-direction:column; }
+.metric-val  { font-size:24px; font-weight:200; color:#fff; line-height:1; margin-top:4px; }
+.metric-desc { font-size:11px; color:rgba(255,255,255,0.40); margin-top:3px; }
 
-/* Pressure card */
-.pres-card { padding:18px; display:flex; flex-direction:column; }
+/* Pressure card — full width, horizontal split */
+.pres-card  { margin:10px 16px 0; padding:16px 18px; display:flex; align-items:stretch; gap:16px; }
+.pres-left  { display:flex; flex-direction:column; flex-shrink:0; }
+.pres-right { flex:1; display:flex; flex-direction:column; justify-content:flex-end; min-width:0; }
 .pres-big { font-size:30px; font-weight:200; color:#fff; line-height:1; margin-top:4px; }
 .pres-unit-sm { font-size:13px; color:rgba(255,255,255,0.45); margin-left:3px; }
-.pres-rate-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:500; margin:8px 0 10px; align-self:flex-start; }
+.pres-rate-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:500; margin-top:8px; align-self:flex-start; }
 .rate-steady  { background:rgba(251,191,36,0.08);  border:1px solid rgba(251,191,36,0.30);  color:#FCD34D; }
 .rate-rising  { background:rgba(134,239,172,0.12); border:1px solid rgba(134,239,172,0.35); color:#86EFAC; }
 .rate-falling { background:rgba(147,197,253,0.15); border:1px solid rgba(147,197,253,0.40); color:#93C5FD; }
 .rate-rapid   { background:rgba(252,165,165,0.18); border:1px solid rgba(252,165,165,0.50);  color:#FCA5A5; }
-.pres-sparkline-wrap { flex:1; min-height:44px; position:relative; }
-.pres-sparkline-wrap svg { width:100%; height:100%; }
+.pres-sparkline-wrap { flex:1; min-height:52px; }
+.pres-sparkline-wrap svg { width:100%; height:100%; display:block; }
 .pres-time-row { display:flex; justify-content:space-between; margin-top:3px; }
 .pres-time-lbl { font-size:9px; color:rgba(255,255,255,0.50); }
 
@@ -213,7 +213,7 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
     .hero    { padding:32px 24px 24px; }
     #current-temp { font-size:96px; }
     .weather-icon { font-size:60px; }
-    .quick-strip,.two-col-row,.compass-card,.chart-card { margin-left:20px; margin-right:20px; }
+    .quick-strip,.two-col-row,.three-col-row,.compass-card,.chart-card,.pres-card { margin-left:20px; margin-right:20px; }
     #last-update { padding-left:24px; padding-right:24px; }
 }
 
@@ -286,33 +286,35 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
             </div>
         </div>
 
-        <!-- ══ ROW: How it Feels | Pressure ══ -->
-        <div class="two-col-row">
-
-            <div class="feels-card glass">
-                <div class="feels-row">
-                    <div class="card-label">Feels Like</div>
-                    <div class="feels-val" id="feels-like">--</div>
-                </div>
-                <div class="feels-row">
-                    <div class="card-label">Humidity</div>
-                    <div class="feels-val" id="hero-humidity">--%</div>
-                </div>
-                <div class="feels-row">
-                    <div class="card-label">Dew Point</div>
-                    <div class="feels-val" id="dew-point">--</div>
-                    <div class="feels-desc" id="dew-desc">--</div>
-                </div>
+        <!-- ══ ROW: Feels Like | Humidity | Dew Point ══ -->
+        <div class="three-col-row">
+            <div class="metric-card glass">
+                <div class="card-label">Feels Like</div>
+                <div class="metric-val" id="feels-like">--</div>
             </div>
+            <div class="metric-card glass">
+                <div class="card-label">Humidity</div>
+                <div class="metric-val" id="hero-humidity">--%</div>
+            </div>
+            <div class="metric-card glass">
+                <div class="card-label">Dew Point</div>
+                <div class="metric-val" id="dew-point">--</div>
+                <div class="metric-desc" id="dew-desc">--</div>
+            </div>
+        </div>
 
-            <div class="pres-card glass">
+        <!-- ══ FULL-WIDTH PRESSURE ══ -->
+        <div class="pres-card glass">
+            <div class="pres-left">
                 <div class="card-label">Pressure</div>
                 <div class="pres-big" id="hero-pressure">----<span class="pres-unit-sm">hPa</span></div>
                 <div class="pres-rate-pill rate-steady" id="pres-rate-pill">
                     <span id="pres-rate-text">— hPa/hr</span>
                 </div>
+            </div>
+            <div class="pres-right">
                 <div class="pres-sparkline-wrap">
-                    <svg viewBox="0 0 160 44" preserveAspectRatio="none" style="overflow:visible">
+                    <svg viewBox="0 0 160 52" preserveAspectRatio="none" style="overflow:visible">
                         <defs>
                             <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%"   stop-color="rgba(255,255,255,0.20)"/>
@@ -327,7 +329,6 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
                     <span class="pres-time-lbl">Now</span>
                 </div>
             </div>
-
         </div>
 
         <!-- ══ FULL-WIDTH COMPASS ══ -->
@@ -702,7 +703,7 @@ function drawPressureSparkline(historyArray) {
     const recent = (historyArray || []).filter(p => p.time > cutoff);
     if (recent.length < 2) { path.setAttribute('d',''); return; }
 
-    const W = 160, H = 44;
+    const W = 160, H = 52;
     const vals = recent.map(p => p.value);
     const min = Math.min(...vals) - 0.3;
     const max = Math.max(...vals) + 0.3;
@@ -798,8 +799,8 @@ function displayCurrentConditions(data, kvTrends) {
     // Ecowitt history is the primary source (always complete, offline-safe).
     // KV trends are the fallback when the history call failed.
     const trendArrays  = buildTrendArrays(data.history, kvTrends);
-    const tempTrend    = calculateTrendFromHistory(trendArrays.temperature, 3 * 3600000);
-    const dewTrend     = calculateTrendFromHistory(trendArrays.dewPoint,    3 * 3600000);
+    const tempTrend    = calculateTrendFromHistory(trendArrays.temperature, 1 * 3600000); // 1h — snappy right-now feel
+    const dewTrend     = calculateTrendFromHistory(trendArrays.dewPoint,    3 * 3600000); // 3h — sustained moisture shift
     const pressureRate = calculatePressureRate(trendArrays.pressure);
     const stormRisk    = calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend);
     const rateDisplay  = getPressureRateDisplay(pressureRate);
@@ -817,7 +818,7 @@ function displayCurrentConditions(data, kvTrends) {
     const pill = document.getElementById('trend-pill');
     if (tempTrend.text && Math.abs(tempTrend.delta) > 0) {
         const dir = tempTrend.trend === 'rising' ? 'Rising' : 'Falling';
-        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.delta).toFixed(1)}° past 3 hours`;
+        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.delta).toFixed(1)}° past hour`;
         pill.className     = `trend-pill ${tempTrend.cssClass}`;
         pill.style.display = 'inline-flex';
     } else {
