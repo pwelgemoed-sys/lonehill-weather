@@ -23,6 +23,13 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+const CORS_PREFLIGHT_HEADERS = {
+  'Access-Control-Allow-Origin':  'https://lonehill.pages.dev',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age':       '86400',
+};
+
 export async function onRequestGet({ env }) {
   if (!env.ECOWITT_API_KEY || !env.ECOWITT_APPLICATION_KEY || !env.ECOWITT_DEVICE_MAC) {
     return jsonResponse({ error: 'Server misconfiguration: missing environment variables.' }, 500);
@@ -65,7 +72,7 @@ export async function onRequestGet({ env }) {
 }
 
 export async function onRequestOptions() {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
+  return new Response(null, { status: 204, headers: CORS_PREFLIGHT_HEADERS });
 }
 
 // ---------------------------------------------------------------------------
