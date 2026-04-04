@@ -207,6 +207,13 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 /* ═══════════════════════════════════════════
    RESPONSIVE — ≥600px
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   RESPONSIVE — ≤375px (iPhone Zoom mode)
+═══════════════════════════════════════════ */
+@media (max-width:375px) {
+    .metric-card .card-label { letter-spacing:1.2px; }
+}
+
 @media (min-width:600px) {
     .header  { padding:22px 24px 0; }
     .settings-wrap { right:24px; }
@@ -571,10 +578,49 @@ function getCompassDirection(deg) {
     return d[Math.round(deg / 22.5) % 16];
 }
 
+// ─── Solar geometry ────────────────────────────────────────────────────────
+// Returns the sun's elevation angle in degrees above the horizon for a given
+// moment, latitude and longitude. Positive = above horizon.
+function getSolarElevation(lat, lng, dateMs) {
+    const d    = new Date(dateMs);
+    const year = d.getUTCFullYear();
+    // Day of year (1-based)
+    const dayOfYear = Math.round((dateMs - Date.UTC(year, 0, 1)) / 86400000) + 1;
+
+    // Solar declination (degrees) — simple approximation, ±0.3° accuracy
+    const decl = -23.45 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10));
+
+    // Equation of time (minutes) — corrects for Earth's elliptical orbit
+    const B   = (2 * Math.PI / 365) * (dayOfYear - 81);
+    const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+
+    // Solar hour angle: 0° at solar noon, ±15° per hour
+    const utcMinutes  = d.getUTCHours() * 60 + d.getUTCMinutes() + d.getUTCSeconds() / 60;
+    const solarNoon   = 720 - 4 * lng - eot;   // minutes from UTC midnight
+    const hourAngleDeg = (utcMinutes - solarNoon) / 4;
+
+    const latR  = lat  * Math.PI / 180;
+    const declR = decl * Math.PI / 180;
+    const haR   = hourAngleDeg * Math.PI / 180;
+
+    const sinElev = Math.sin(latR) * Math.sin(declR)
+                  + Math.cos(latR) * Math.cos(declR) * Math.cos(haR);
+    return Math.asin(Math.max(-1, Math.min(1, sinElev))) * 180 / Math.PI;
+}
+
+// Clarity index K = measured / expected-clear-sky.
+// Returns null when the sun is too low to give a meaningful ratio.
+function getClarityIndex(measuredWm2, elevationDeg) {
+    if (elevationDeg < 3) return null;       // atmospheric path too long below 3°
+    const iClear = 1000 * Math.sin(elevationDeg * Math.PI / 180);
+    if (iClear < 10) return null;            // avoid near-zero division
+    return measuredWm2 / iClear;
+}
+
 function getWeatherCondition(solarRad, rainRate) {
     const now = Date.now();
 
-    // Night = outside civil twilight (includes dusk/dawn glow).
+    // Night = outside civil twilight.
     // Falls back to solarRad === 0 if sunrise/sunset data is unavailable.
     const isNight = sunTimes
         ? now < sunTimes.civil_twilight_begin || now > sunTimes.civil_twilight_end
@@ -582,7 +628,22 @@ function getWeatherCondition(solarRad, rainRate) {
 
     if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
     if (isNight)                           return { icon:'🌙',  name:'Night',         key:'night'         };
-    // Daytime — use solar radiation to grade cloud cover
+
+    // Daytime — classify by clarity index K (measured vs expected clear-sky).
+    // When the sun is very low (<3° elevation) K is unreliable; fall back to
+    // the flat W/m² thresholds which still work better than K at those angles.
+    const elevationDeg = getSolarElevation(SUN_LAT, SUN_LNG, now);
+    const K = (solarRad !== null) ? getClarityIndex(solarRad, elevationDeg) : null;
+
+    if (K !== null) {
+        // Clarity-index classification — accounts for solar geometry
+        if (K > 0.70)  return { icon:'☀️',  name:'Sunny',         key:'sunny'         };
+        if (K > 0.40)  return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
+        if (K > 0.15)  return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
+        return                 { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
+    }
+
+    // Fallback for very low sun angles or missing solarRad
     if (solarRad === null || solarRad < 100) return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
     if (solarRad < 250)                      return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
     if (solarRad < 500)                      return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
