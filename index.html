@@ -705,33 +705,59 @@ function ecowittListToTrendArray(listObj, converterFn) {
 // Build all three trend arrays from Ecowitt history, falling back to KV data
 // when a given channel is absent. Returns { temperature, pressure, dewPoint }.
 function buildTrendArrays(historyData, kvTrends) {
-    const tempList    = historyData?.outdoor?.temperature?.list;
-    const pressList   = historyData?.pressure?.relative?.list;
-    const dewList     = historyData?.outdoor?.dew_point?.list;
+    const tempList  = historyData?.outdoor?.temperature?.list;
+    const pressList = historyData?.pressure?.relative?.list;
+    const dewList   = historyData?.outdoor?.dew_point?.list;
 
     return {
-        // Temperature: KV primary (5-min resolution, ideal for 1-hour pill).
-        // Ecowitt 30-min history is too coarse — 1h window only yields ~2 points,
-        // effectively measuring a 30-min delta which rarely clears the 0.5° threshold.
-        temperature: (kvTrends?.temperature?.length >= 2)
-            ? kvTrends.temperature
-            : (tempList ? ecowittListToTrendArray(tempList, fToC) : []),
-
-        // Pressure + dew: Ecowitt primary (3h window, 30-min data = 6-7 points, reliable).
-        pressure:    pressList ? ecowittListToTrendArray(pressList, inHgToHPa) : (kvTrends?.pressure  || []),
-        dewPoint:    dewList   ? ecowittListToTrendArray(dewList,   fToC)      : (kvTrends?.dewPoint  || []),
+        // Ecowitt primary for all three — 24h of data always available regardless
+        // of how long the app was offline. KV is last-resort fallback only.
+        temperature: tempList  ? ecowittListToTrendArray(tempList,  fToC)      : (kvTrends?.temperature || []),
+        pressure:    pressList ? ecowittListToTrendArray(pressList, inHgToHPa) : (kvTrends?.pressure    || []),
+        dewPoint:    dewList   ? ecowittListToTrendArray(dewList,   fToC)      : (kvTrends?.dewPoint    || []),
     };
 }
-function calculateTrendFromHistory(historyArray, windowMs) {
+
+// Linear regression slope over a time window, returned as rate-per-hour.
+// This is robust to sparse/irregular data because:
+//   - It uses ALL points in the window, not just first vs last
+//   - It normalizes by actual elapsed time so a 30-min gap ≠ a 1h gap
+//   - A single noisy endpoint can't skew the result
+// Returns { trend, text, cssClass, ratePerHour }
+function calculateTrendFromHistory(historyArray, windowMs, threshold = 0.5) {
     if (!historyArray || historyArray.length < 2)
-        return { trend:'steady', text:'', cssClass:'steady', delta:0 };
+        return { trend:'steady', text:'', cssClass:'steady', ratePerHour:0 };
+
     const cutoff = Date.now() - windowMs;
-    const recent = historyArray.filter(p => p.time > cutoff);
-    if (recent.length < 2) return { trend:'steady', text:'', cssClass:'steady', delta:0 };
-    const diff = recent[recent.length - 1].value - recent[0].value;
-    return diff > 0.5  ? { trend:'rising',  text:'↗', cssClass:'rising',  delta:diff }
-         : diff < -0.5 ? { trend:'falling', text:'↘', cssClass:'falling', delta:diff }
-         :               { trend:'steady',  text:'',  cssClass:'steady',  delta:diff };
+    const pts = historyArray.filter(p => p.time > cutoff);
+    if (pts.length < 2)
+        return { trend:'steady', text:'', cssClass:'steady', ratePerHour:0 };
+
+    // Normalise timestamps to hours from first point to keep numbers manageable
+    const t0   = pts[0].time;
+    const tHrs = pts.map(p => (p.time - t0) / 3600000);
+    const vals  = pts.map(p => p.value);
+
+    const n    = pts.length;
+    const tBar = tHrs.reduce((s, t) => s + t, 0) / n;
+    const vBar = vals.reduce((s, v) => s + v, 0) / n;
+
+    let num = 0, den = 0;
+    for (let i = 0; i < n; i++) {
+        const dt = tHrs[i] - tBar;
+        num += dt * (vals[i] - vBar);
+        den += dt * dt;
+    }
+
+    // den === 0 means all points have identical timestamps — shouldn't happen
+    if (den === 0)
+        return { trend:'steady', text:'', cssClass:'steady', ratePerHour:0 };
+
+    const ratePerHour = num / den;  // °C/hr  (or hPa/hr, °C/hr for dew)
+
+    return ratePerHour >  threshold ? { trend:'rising',  text:'↗', cssClass:'rising',  ratePerHour }
+         : ratePerHour < -threshold ? { trend:'falling', text:'↘', cssClass:'falling', ratePerHour }
+         :                            { trend:'steady',  text:'',  cssClass:'steady',  ratePerHour };
 }
 
 // Calculate hPa/hr from pressure history over last 3 hours
@@ -883,7 +909,7 @@ function displayCurrentConditions(data, kvTrends) {
     // Ecowitt history is the primary source (always complete, offline-safe).
     // KV trends are the fallback when the history call failed.
     const trendArrays  = buildTrendArrays(data.history, kvTrends);
-    const tempTrend    = calculateTrendFromHistory(trendArrays.temperature, 1 * 3600000); // 1h — snappy right-now feel
+    const tempTrend    = calculateTrendFromHistory(trendArrays.temperature, 2 * 3600000); // 2h window, regression slope in °C/hr
     const dewTrend     = calculateTrendFromHistory(trendArrays.dewPoint,    3 * 3600000); // 3h — sustained moisture shift
     const pressureRate = calculatePressureRate(trendArrays.pressure);
     const stormRisk    = calculateStormRisk(dewPointC, tempTrend, pressureRate, dewTrend);
@@ -900,9 +926,9 @@ function displayCurrentConditions(data, kvTrends) {
         document.getElementById('current-temp').innerHTML = `${fmt(temp)}<span class="temp-unit">${getTempUnit()}</span>`;
 
     const pill = document.getElementById('trend-pill');
-    if (tempTrend.text && Math.abs(tempTrend.delta) > 0) {
-        const dir = tempTrend.trend === 'rising' ? 'Rising' : 'Falling';
-        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.delta).toFixed(1)}° past hour`;
+    if (tempTrend.text && Math.abs(tempTrend.ratePerHour) > 0) {
+        const dir  = tempTrend.trend === 'rising' ? 'Rising' : 'Falling';
+        pill.textContent   = `${tempTrend.text} ${dir} ${Math.abs(tempTrend.ratePerHour).toFixed(1)}°/hr`;
         pill.className     = `trend-pill ${tempTrend.cssClass}`;
         pill.style.display = 'inline-flex';
     } else {
