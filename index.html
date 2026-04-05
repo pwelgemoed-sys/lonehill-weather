@@ -767,13 +767,29 @@ function calculateTrendFromHistory(historyArray, windowMs, threshold = 0.5) {
 function calculatePressureRate(historyArray) {
     if (!historyArray || historyArray.length < 2) return null;
     const cutoff = Date.now() - 3 * 3600 * 1000;
-    const recent = historyArray.filter(p => p.time > cutoff);
-    if (recent.length < 2) return null;
-    const oldest = recent[0];
-    const newest = recent[recent.length - 1];
-    const deltaHrs = (newest.time - oldest.time) / 3600000;
-    if (deltaHrs < 0.1) return null;
-    return (newest.value - oldest.value) / deltaHrs;
+    const pts = historyArray.filter(p => p.time > cutoff);
+    if (pts.length < 2) return null;
+
+    // Least-squares linear regression — same approach as temperature trend.
+    // Normalise timestamps to hours from first point.
+    const t0   = pts[0].time;
+    const tHrs = pts.map(p => (p.time - t0) / 3600000);
+    const vals  = pts.map(p => p.value);
+
+    const n    = pts.length;
+    const tBar = tHrs.reduce((s, t) => s + t, 0) / n;
+    const vBar = vals.reduce((s, v) => s + v, 0) / n;
+
+    let num = 0, den = 0;
+    for (let i = 0; i < n; i++) {
+        const dt = tHrs[i] - tBar;
+        num += dt * (vals[i] - vBar);
+        den += dt * dt;
+    }
+    if (den === 0) return null;
+
+    const rate = num / den;  // hPa/hr
+    return rate;
 }
 
 function getPressureRateDisplay(rate) {
