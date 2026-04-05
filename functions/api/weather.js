@@ -14,9 +14,10 @@
  *   Binding name: WEATHER_KV
  */
 
-const ECOWITT_BASE    = 'https://api.ecowitt.net/api/v3/device';
-const KV_HISTORY_KEY  = 'trend_history';
-const MAX_HISTORY_HOURS = 48;
+const ECOWITT_BASE       = 'https://api.ecowitt.net/api/v3/device';
+const KV_HISTORY_KEY     = 'trend_history';
+const MAX_HISTORY_HOURS  = 48;
+const KV_MIN_WRITE_MS    = 5 * 60 * 1000;  // write at most once every 5 minutes
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': 'https://lonehill.pages.dev',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -102,32 +103,41 @@ async function fetchEcowitt(url) {
 }
 
 async function updateTrendHistory(kv, realtimeData) {
-  // Read stored history — backwards-compat: add dewPoint if missing from old records
-  let history = { pressure: [], temperature: [], dewPoint: [] };
+  // Read stored history — backwards-compat: add dewPoint/lastWritten if missing
+  let history = { pressure: [], temperature: [], dewPoint: [], lastWritten: 0 };
   try {
     const stored = await kv.get(KV_HISTORY_KEY, { type: 'json' });
     if (stored && stored.pressure && stored.temperature) {
       history = stored;
-      if (!history.dewPoint) history.dewPoint = [];
+      if (!history.dewPoint)    history.dewPoint    = [];
+      if (!history.lastWritten) history.lastWritten = 0;
     }
   } catch (_) { /* KV read failed — start fresh */ }
 
   const now    = Date.now();
   const cutoff = now - MAX_HISTORY_HOURS * 3600 * 1000;
 
+  // Skip the write if we wrote recently — still return current history so the
+  // caller has the latest stored data available as a fallback.
+  if (now - history.lastWritten < KV_MIN_WRITE_MS) {
+    return history;
+  }
+
   // Extract current readings (all converted to metric on the server side)
-  const rawPressure  = parseEcowittValue(realtimeData?.pressure?.relative);
-  const rawTemp      = parseEcowittValue(realtimeData?.outdoor?.temperature);
-  const rawDewPoint  = parseEcowittValue(realtimeData?.outdoor?.dew_point);
+  const rawPressure = parseEcowittValue(realtimeData?.pressure?.relative);
+  const rawTemp     = parseEcowittValue(realtimeData?.outdoor?.temperature);
+  const rawDewPoint = parseEcowittValue(realtimeData?.outdoor?.dew_point);
 
   // Trim first, then push — so arrays never temporarily exceed window size
   history.pressure    = history.pressure.filter(p => p.time > cutoff);
   history.temperature = history.temperature.filter(t => t.time > cutoff);
   history.dewPoint    = history.dewPoint.filter(d => d.time > cutoff);
 
-  if (rawPressure !== null)  history.pressure.push({ time: now, value: inHgToHPa(rawPressure) });
-  if (rawTemp     !== null)  history.temperature.push({ time: now, value: fToC(rawTemp)       });
-  if (rawDewPoint !== null)  history.dewPoint.push({ time: now, value: fToC(rawDewPoint)      });
+  if (rawPressure !== null) history.pressure.push(   { time: now, value: inHgToHPa(rawPressure) });
+  if (rawTemp     !== null) history.temperature.push( { time: now, value: fToC(rawTemp)          });
+  if (rawDewPoint !== null) history.dewPoint.push(    { time: now, value: fToC(rawDewPoint)       });
+
+  history.lastWritten = now;
 
   // Write back with 49h TTL so KV auto-cleans if station goes offline
   try {
