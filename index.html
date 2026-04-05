@@ -33,6 +33,7 @@ body[data-cond="sunny"]        { background: linear-gradient(170deg,#0D4F9E 0%,#
 body[data-cond="partly-cloudy"]{ background: linear-gradient(170deg,#1358A0 0%,#2176C2 22%,#6BA8D4 50%,#D4A44A 80%,#B8882A 100%); }
 body[data-cond="cloudy"]       { background: linear-gradient(170deg,#2C3E50 0%,#3D5467 25%,#5B7080 55%,#7A8E96 80%,#8E9FA6 100%); }
 body[data-cond="rainy"]        { background: linear-gradient(170deg,#0D1B2A 0%,#1B2E42 25%,#1E3D58 55%,#162B3E 80%,#0F1E2D 100%); }
+body[data-cond="twilight"]     { background: linear-gradient(170deg,#1A0A2E 0%,#3D1F5C 15%,#8B3A62 35%,#C4622D 58%,#E8923A 78%,#2A1845 100%); }
 body[data-cond="night"]        { background: linear-gradient(170deg,#020308 0%,#060A1A 20%,#080E28 50%,#06102A 80%,#040820 100%); }
 
 /* ═══════════════════════════════════════════
@@ -213,7 +214,7 @@ body[data-cond="rainy"] .fx-rain { opacity:1; }
 @media (max-width:375px) {
     .metric-card .card-label { letter-spacing:1.2px; }
     .metric-card { padding:10px 8px; }
-    .metric-desc { font-size:10px; }
+    .metric-desc { font-size:9px; }
 }
 
 @media (min-width:600px) {
@@ -622,34 +623,43 @@ function getClarityIndex(measuredWm2, elevationDeg) {
 function getWeatherCondition(solarRad, rainRate) {
     const now = Date.now();
 
-    // Night = outside civil twilight.
-    // Falls back to solarRad === 0 if sunrise/sunset data is unavailable.
-    const isNight = sunTimes
-        ? now < sunTimes.civil_twilight_begin || now > sunTimes.civil_twilight_end
-        : solarRad === null || solarRad === 0;
+    // Determine day/twilight/night from civil twilight + sunrise/sunset times.
+    // Falls back gracefully if sunTimes hasn't loaded yet.
+    let isNight = false, isTwilight = false;
+    if (sunTimes) {
+        isNight    = now < sunTimes.civil_twilight_begin || now > sunTimes.civil_twilight_end;
+        isTwilight = !isNight && (
+            (now >= sunTimes.civil_twilight_begin && now < sunTimes.sunrise) ||  // dawn
+            (now > sunTimes.sunset               && now <= sunTimes.civil_twilight_end)  // dusk
+        );
+    } else {
+        isNight = solarRad === null || solarRad === 0;
+    }
 
-    if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',         key:'rainy'         };
-    if (isNight)                           return { icon:'🌙',  name:'Night',         key:'night'         };
+    if (rainRate !== null && rainRate > 0) return { icon:'🌧️', name:'Rainy',    key:'rainy'    };
+    if (isNight)                           return { icon:'🌙',  name:'Night',    key:'night'    };
+    if (isTwilight)                        return { icon:'🌇',  name:'Twilight', key:'twilight' };
 
     // Daytime — classify by clarity index K (measured vs expected clear-sky).
-    // When the sun is very low (<3° elevation) K is unreliable; fall back to
-    // the flat W/m² thresholds which still work better than K at those angles.
+    // Below 3° K is computed but unreliable due to extreme atmospheric path length;
+    // below 10° we relax the Cloudy floor so partially-clear low-sun skies aren't
+    // misclassified (e.g. blue sky visible at 17:50 with 10 W/m² and 5° elevation).
     const elevationDeg = getSolarElevation(SUN_LAT, SUN_LNG, now);
     const K = (solarRad !== null) ? getClarityIndex(solarRad, elevationDeg) : null;
 
     if (K !== null) {
-        // Clarity-index classification — accounts for solar geometry
-        if (K > 0.70)  return { icon:'☀️',  name:'Sunny',         key:'sunny'         };
-        if (K > 0.40)  return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
-        if (K > 0.15)  return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
-        return                 { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
+        const cloudyFloor = elevationDeg < 10 ? 0.07 : 0.15;  // relaxed threshold at low sun
+        if (K > 0.70)         return { icon:'☀️',  name:'Sunny',         key:'sunny'         };
+        if (K > 0.40)         return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
+        if (K > cloudyFloor)  return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
+        return                       { icon:'☁️',  name:'Cloudy',        key:'cloudy'        };
     }
 
     // Fallback for very low sun angles or missing solarRad
-    if (solarRad === null || solarRad < 100) return { icon:'☁️',  name:'Overcast',      key:'cloudy'        };
-    if (solarRad < 250)                      return { icon:'🌥️', name:'Partly Cloudy', key:'partly-cloudy' };
-    if (solarRad < 500)                      return { icon:'🌤️', name:'Partly Sunny',  key:'partly-cloudy' };
-    return                                          { icon:'☀️',  name:'Sunny',         key:'sunny'         };
+    if (solarRad === null || solarRad < 100) return { icon:'☁️',  name:'Cloudy',        key:'cloudy'        };
+    if (solarRad < 250)                      return { icon:'🌥️', name:'Partly Cloudy',  key:'partly-cloudy' };
+    if (solarRad < 500)                      return { icon:'🌤️', name:'Partly Sunny',   key:'partly-cloudy' };
+    return                                          { icon:'☀️',  name:'Sunny',          key:'sunny'         };
 }
 
 const DEW_RANGES = [
