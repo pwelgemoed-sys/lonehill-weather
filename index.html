@@ -710,9 +710,16 @@ function buildTrendArrays(historyData, kvTrends) {
     const dewList     = historyData?.outdoor?.dew_point?.list;
 
     return {
-        temperature: tempList  ? ecowittListToTrendArray(tempList,  fToC)      : (kvTrends?.temperature || []),
-        pressure:    pressList ? ecowittListToTrendArray(pressList, inHgToHPa) : (kvTrends?.pressure    || []),
-        dewPoint:    dewList   ? ecowittListToTrendArray(dewList,   fToC)      : (kvTrends?.dewPoint     || []),
+        // Temperature: KV primary (5-min resolution, ideal for 1-hour pill).
+        // Ecowitt 30-min history is too coarse — 1h window only yields ~2 points,
+        // effectively measuring a 30-min delta which rarely clears the 0.5° threshold.
+        temperature: (kvTrends?.temperature?.length >= 2)
+            ? kvTrends.temperature
+            : (tempList ? ecowittListToTrendArray(tempList, fToC) : []),
+
+        // Pressure + dew: Ecowitt primary (3h window, 30-min data = 6-7 points, reliable).
+        pressure:    pressList ? ecowittListToTrendArray(pressList, inHgToHPa) : (kvTrends?.pressure  || []),
+        dewPoint:    dewList   ? ecowittListToTrendArray(dewList,   fToC)      : (kvTrends?.dewPoint  || []),
     };
 }
 function calculateTrendFromHistory(historyArray, windowMs) {
